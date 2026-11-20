@@ -1,0 +1,32 @@
+{
+  "name": "olpark-planb",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "올팍 플랜B: 올림픽공원 공연장을 갑자기 못 쓰게 됐을 때 대체 공연장을 3D로 검토하고 수용 인원을 확인하는 도구",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "data:events": "node scripts/fetch-events.mjs"
+  },
+  "dependencies": {
+    "@react-three/drei": "9.117.3",
+    "@react-three/fiber": "8.17.10",
+    "lz-string": "1.5.0",
+    "polygon-clipping": "0.15.7",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "three": "0.170.0",
+    "zustand": "4.5.5"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@types/three": "0.170.0",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.6.3",
+    "vite": "5.4.11"
+  }
+}
