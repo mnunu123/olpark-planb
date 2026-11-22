@@ -24,9 +24,10 @@
 |---|---|---|---|
 | 올림픽공원 공연장 실감형 콘텐츠 | [15127487](https://www.data.go.kr/data/15127487/fileData.do) | 공연장 5곳 3D 모델 | 사용 중 (이용허락범위 제한 없음) |
 | 올림픽공원 실시간 주차현황 | [15168686](https://www.data.go.kr/data/15168686/openapi.do) | 상단 주차 대수 | 사용 중 (브라우저에서 직접 호출) |
-| 올림픽공원 공연정보 / 대관정보 | [3037877](https://www.data.go.kr/data/3037877/openapi.do) / [15015212](https://www.data.go.kr/data/15015212/openapi.do) | 날짜별 공연장 일정 | 문화공공데이터광장 점검(2026-11-22 18:00까지)이 끝나면 연동. 그 전에는 공식 홈페이지 일정 스냅샷 사용 |
+| 올림픽공원 공연·행사 일정 | 없음 ([누리집 일정](https://www.ksponco.or.kr/olympicpark/eventInfo/eventInfoList?mid=a20301010100)) | 날짜별 공연장 일정 | 사용 중 (`/api/events`로 실시간, 실패하면 스냅샷) |
+| 올림픽공원 공연정보 / 대관정보 | [3037877](https://www.data.go.kr/data/3037877/openapi.do) / [15015212](https://www.data.go.kr/data/15015212/openapi.do) | 없음 | 키를 받아 확인했지만 최근 일정이 없어 쓰지 않음 (아래 [확인 결과](#공공데이터-api-확인-결과-2026-11-22)) |
 
-주차 API 주소에 들어 있는 `apiKey`는 한국체육산업개발 홈페이지 API 안내에 공개된 공용 키입니다. 개인 인증키는 코드에 넣지 않고 Vercel 환경변수로 둡니다.
+주차 API 주소에 들어 있는 `apiKey`는 한국체육산업개발 홈페이지 API 안내에 공개된 공용 키입니다. 공연정보·대관정보 API 인증키는 지금 쓰지 않아서 코드에도, 환경변수에도 넣지 않았습니다.
 
 ## 계산 기준
 
@@ -47,6 +48,8 @@
 ## 폴더 구조
 
 ```
+api/events.js            Vercel 함수: 누리집 일정을 실시간으로 받아 JSON으로 돌려줌 (GET /api/events)
+shared/kspo-events.js    누리집 일정 받기·정리 (Vercel 함수, Vite 서버, 스냅샷 스크립트가 같이 씀)
 src/
   App.tsx                화면 배치, 단축키(Esc·Enter·Backspace·Delete), 공유 링크 읽기
   store.ts               상태(zustand): 배치(Plan), 그리기 모드, 카메라
@@ -58,14 +61,14 @@ src/
   lib/
     capacity.ts          순면적, 기준별 인원, 밀집 단계, 출구 비교
     geometry.ts          다각형 면적, 겹친 영역 빼기(polygon-clipping)
-    events.ts            일정 불러오기와 공연장별 겹침 확인  ← API 교체 지점
+    events.ts            일정 불러오기(실시간 → 스냅샷 순)와 공연장별 겹침 확인
     parking.ts           주차 API 호출
     share.ts             배치를 주소(#p=)로 압축·복원 (lz-string)
   scene/VenueScene.tsx   3D 장면: 모델, 지붕 자르기, 구역·무대·출구 표시
   ui/                    왼쪽(배치·찾기), 오른쪽(결과), 상단, 검토서, 안내창
 public/
   models/*.glb           변환한 3D 모델
-  data/events.json       공연·행사 일정 스냅샷
+  data/events.json       공연·행사 일정 스냅샷 (실시간이 안 될 때 씀)
 scripts/fetch-events.mjs 일정 스냅샷 갱신
 tools/model/             3D 모델 정리 스크립트
 ```
@@ -76,7 +79,7 @@ Node 18 이상.
 
 ```bash
 npm ci
-npm run dev        # 개발 서버
+npm run dev        # 개발 서버 (/api/events도 같이 돌아감)
 npm run typecheck  # 타입 검사
 npm run build      # dist/ 생성
 npm run preview    # 빌드 결과 확인
@@ -88,27 +91,39 @@ npm run preview    # 빌드 결과 확인
 
 1. Vercel에서 이 저장소를 Import 합니다.
 2. Framework Preset은 Vite, Build Command `npm run build`, Output Directory `dist` (자동으로 잡힙니다).
-3. 지금은 환경변수가 필요 없습니다. 일정 API를 붙일 때 키를 추가합니다(아래).
+3. 환경변수는 필요 없습니다. `api/events.js`는 Vercel 함수로 자동 배포됩니다.
+4. 배포 주소 뒤에 `/api/events`를 붙여 열었을 때 `"source":"live"`와 일정 목록이 나오면 정상입니다.
 
 모델 다섯 개가 합쳐 약 31MB라 첫 로딩에 시간이 걸릴 수 있습니다. 모델은 공연장을 고를 때 하나씩 받습니다.
 
 ## 일정 데이터
 
-지금은 올림픽공원 공식 홈페이지의 공연·행사 일정을 받아 둔 스냅샷(`public/data/events.json`)을 씁니다.
+대체 공연장 찾기는 올림픽공원 공식 누리집의 [공연·행사 일정](https://www.ksponco.or.kr/olympicpark/eventInfo/eventInfoList?mid=a20301010100)을 씁니다.
+
+1. 앱이 `/api/events`를 부릅니다. Vercel 함수가 누리집에서 2개월 전부터 6개월 뒤까지 9개월 치를 받아 합쳐 돌려줍니다. 누리집 서버가 다른 사이트에서 브라우저로 직접 부르는 요청을 받아 주지 않아서 서버를 거칩니다.
+2. 응답은 Vercel 엣지에서 30분 동안 캐시합니다. 한 달이라도 못 받으면 전체를 실패로 봅니다. 빠진 달이 있으면 그 기간 공연장이 비어 있는 것처럼 보이기 때문입니다.
+3. 실패하면 `public/data/events.json` 스냅샷을 쓰고, 화면에 "받아 둔 일정"이라고 받은 시각과 함께 표시합니다.
+4. 고른 날짜가 조회한 범위 밖이면 "공개 일정 없음" 대신 "일정 확인 불가"로 표시합니다.
+
+스냅샷 갱신:
 
 ```bash
 npm run data:events                   # 2개월 전 ~ 6개월 뒤
 npm run data:events -- 202601 202703  # 기간 지정
 ```
 
-갱신한 뒤에는 `src/lib/events.ts`의 `EVENTS_SOURCE.collectedAt` 날짜를 바꿉니다. 공개된 일정 기준이라 실제 대관 가능 여부는 대관 담당 확인이 필요하고, 취소된 공연이 목록에 남아 있을 수 있습니다.
+공개된 일정 기준이라 실제 대관 가능 여부는 대관 담당 확인이 필요하고, 취소된 공연이 목록에 남아 있을 수 있습니다. 공연 이름을 누르면 누리집의 공연 상세 페이지가 열립니다.
 
-### 공공데이터 API로 바꾸는 순서
+### 공공데이터 API 확인 결과 (2026-11-22)
 
-1. 2026-11-22 18:00 점검이 끝나면 공공데이터포털에서 '올림픽공원 공연정보', '대관정보'의 바로가기로 들어가 문화공공데이터광장에서 활용신청하고 인증키를 받습니다.
-2. `api/events.ts` 서버리스 함수를 추가합니다. 환경변수의 키로 API를 부르고, 응답을 앱의 `ParkEvent` 형식(`id, title, begin, end, venue, venueCode, time`)으로 바꿔 돌려줍니다. 키가 브라우저에 노출되지 않습니다.
-3. `src/lib/events.ts`의 `loadEvents()`가 `/api/events`를 먼저 부르고, 실패하면 지금의 스냅샷을 쓰도록 바꿉니다.
-4. Vercel 프로젝트 Settings → Environment Variables에 키를 넣고 다시 배포합니다.
+공공데이터포털의 두 API는 문화공공데이터광장(api.kcisa.kr)으로 연결됩니다. 인증키를 받아 전체 데이터를 내려받아 봤습니다.
+
+| API | 주소 | 건수 | 확인한 내용 |
+|---|---|---|---|
+| 올림픽공원공연정보 | `/openapi/service/rest/meta/KSCperf` | 2,502 | 제목과 일시에 적힌 연도가 2010~2024년. 2025·2026년 공연은 없음. 일시가 "9.21(토) 18:00"처럼 연도 없는 글로만 들어 있음. 포털 표시 데이터 수정일 2024-09-13 |
+| 올림픽공원대관정보 | `/openapi/service/rest/meta12/getKSCD0803` | 717 | 제목에 적힌 연도가 2013~2022년. 날짜 칸(`temporalCoverage`)이 모두 비어 있고 공연 이름과 장소만 있음. 포털 표시 데이터 수정일 2022-07-09, 갱신주기 연간 |
+
+그래서 날짜별 비교에는 누리집 일정을 씁니다. 누리집 일정에는 공연번호, 시작일, 종료일, 장소코드가 따로 들어 있습니다. 같은 원천으로 두 API를 최신화하면 `shared/kspo-events.js`의 받아 오는 부분만 바꿔 바로 연동할 수 있습니다.
 
 ## 3D 모델을 만든 과정
 
@@ -134,4 +149,4 @@ KSPO DOME은 SketchUp DAE라서 한 단계가 더 있습니다.
 ## 남은 일
 
 - [ ] Vercel 배포 주소를 이 문서 맨 위에 기입
-- [ ] 일정 API 연동 (위 순서)
+- [ ] 배포 후 `/api/events`가 실시간 일정을 돌려주는지 확인

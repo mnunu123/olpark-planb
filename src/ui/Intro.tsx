@@ -41,7 +41,7 @@ export default function Intro() {
         <table className="datasets">
           <tbody>
             {DATASETS.map((d) => (
-              <tr key={d.id}>
+              <tr key={d.name}>
                 <td>
                   <a href={d.url} target="_blank" rel="noreferrer">
                     {d.name}

@@ -208,8 +208,8 @@ export default function Report() {
         <h2>사용한 공공데이터 (한국체육산업개발)</h2>
         <ol className="src">
           {DATASETS.map((d) => (
-            <li key={d.id}>
-              {d.name} (공공데이터포털 {d.id}) — {d.use}
+            <li key={d.name}>
+              {d.name} ({d.ref}) — {d.use}
             </li>
           ))}
         </ol>

@@ -20,20 +20,20 @@ export const CONTEXT_FACTS = [
 export const DATASETS = [
   {
     name: '올림픽공원 공연장 실감형 콘텐츠',
-    id: '15127487',
+    ref: '공공데이터포털 15127487',
     use: '공연장 5곳 3D 모델 (KSPO DOME, 핸드볼경기장, 우리금융아트홀, 88잔디마당, 수변무대)',
     url: 'https://www.data.go.kr/data/15127487/fileData.do',
   },
   {
-    name: '올림픽공원 공연정보 / 대관정보',
-    id: '3037877 / 15015212',
-    use: '날짜별 공연장 일정 (API 연동 전에는 올림픽공원 공식 일정 스냅샷 사용)',
-    url: 'https://www.data.go.kr/data/3037877/openapi.do',
-  },
-  {
     name: '올림픽공원 실시간 주차현황',
-    id: '15168686',
+    ref: '공공데이터포털 15168686',
     use: '동2·남2·북2 주차장 현재 주차 대수',
     url: 'https://www.data.go.kr/data/15168686/openapi.do',
+  },
+  {
+    name: '올림픽공원 공연·행사 일정',
+    ref: '한국체육산업개발 누리집',
+    use: '날짜별 공연장 일정을 실시간으로 불러옴. 공공데이터포털 공연정보·대관정보 API에는 2024년, 2022년 공연까지만 있어 누리집 일정을 씀',
+    url: 'https://www.ksponco.or.kr/olympicpark/eventInfo/eventInfoList?mid=a20301010100',
   },
 ];
